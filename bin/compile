@@ -14,10 +14,6 @@ if [ -e "$ENV_DIR/DATABASE_URL" ]; then
   export DATABASE_URL="$(cat $ENV_DIR/DATABASE_URL)";
 fi
 
-# Set defaults for our configuration variables.  Stable Rust is sufficiently
-# stable at this point that I think we can just default it.
-VERSION=stable
-
 # Set this to "1" in `RustConfig` to just install a Rust toolchain and not
 # build `Cargo.toml`.  This is useful if you have a project written in Ruby
 # or Node (for example) that needs to build extension modules using Rust.
@@ -35,11 +31,6 @@ DIESEL_FLAGS=""
 # Default build flags to pass to `cargo build`.
 RUST_CARGO_BUILD_FLAGS="--release"
 
-# Load our toolchain configuration, if any was specified.
-if [ -f "$BUILD_DIR/rust-toolchain" ]; then
-    VERSION="$(cat "$BUILD_DIR/rust-toolchain")"
-fi
-
 # Load our configuration variables, if any were specified.
 if [ -f "$BUILD_DIR/RustConfig" ]; then
     . "$BUILD_DIR/RustConfig"
@@ -47,12 +38,6 @@ fi
 
 # Standard paranoia.
 set -eu
-
-# Check our configuration options.
-if [ -z ${VERSION+x} ]; then
-  >&2 echo "failed: must set VERSION with rust-toolchain or RustConfig to indicate the Rust version."
-  exit 1
-fi
 
 # Notify users running old, unstable versions of Rust about how to deploy
 # successfully.
@@ -92,19 +77,21 @@ cd "$CACHE_DIR"
 
 # Make sure we have an appropriate Rust toolchain installed.
 if [ -d "$CARGO_HOME" ]; then
-    echo "-----> Checking for new releases of Rust $VERSION channel"
-    # It's possible that $VERSION has changed, or the `stable` channel has updated.
+    echo "-----> Checking for new releases of rustup"
     rustup self update
-    rustup update "$VERSION"
-    rustup default "$VERSION"
+
+    echo "-----> Checking for new releases of Rust"
+    rustup update
 else
     echo "-----> Downloading rustup"
-    curl https://sh.rustup.rs -sSf > rustup.sh
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
     chmod u+x rustup.sh
-    echo "-----> Using rustup to install Rust channel $VERSION"
-    ./rustup.sh -y --default-toolchain "$VERSION"
+
+    echo "-----> Installing rustup"
+    ./rustup.sh -y --default-toolchain none
     rm rustup.sh
 fi
+
 if [ ! -x "$CARGO_HOME/bin/rustc" ]; then
   echo "failed: Cannot find Rust binaries at $CARGO_HOME"
   exit 1
