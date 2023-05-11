@@ -40,6 +40,11 @@ export RUSTUP_HOME="$CACHE_DIR/rustup"
 # to do the right thing when new versions are released.
 export CARGO_HOME="$CACHE_DIR/cargo"
 
+# Disable incremental compilation, so that the Rust compiler doesn't
+# waste time creating the additional artifacts required for incremental
+# builds.
+export CARGO_INCREMENTAL=0
+
 # Include binaries installed by cargo and rustup in our path.
 PATH="\$CARGO_HOME/bin:\$PATH"
 EOF
