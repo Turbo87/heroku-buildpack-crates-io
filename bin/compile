@@ -62,7 +62,7 @@ if [ -d "$CARGO_HOME" ]; then
     rustup self update
 
     echo "-----> Checking for new releases of Rust"
-    rustup update
+    rustup update --no-self-update
 else
     echo "-----> Downloading rustup"
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
