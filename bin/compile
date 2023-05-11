@@ -71,6 +71,9 @@ else
     echo "-----> Installing rustup"
     ./rustup.sh -y --default-toolchain none
     rm rustup.sh
+
+    echo "-----> Installing Rust"
+    rustup update --no-self-update
 fi
 
 if [ ! -x "$CARGO_HOME/bin/rustc" ]; then
