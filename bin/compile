@@ -61,6 +61,9 @@ if [ -d "$CARGO_HOME" ]; then
     echo "-----> Updating rustup"
     rustup self update
 
+    # Skip installation of `rust-docs`, `rustfmt` and `clippy`
+    rustup set profile minimal
+
     echo "-----> Updating Rust"
     rustup update --no-self-update
 else
@@ -69,6 +72,9 @@ else
     chmod u+x rustup.sh
     ./rustup.sh -y --default-toolchain none
     rm rustup.sh
+
+    # Skip installation of `rust-docs`, `rustfmt` and `clippy`
+    rustup set profile minimal
 
     echo "-----> Installing Rust"
     rustup update --no-self-update
