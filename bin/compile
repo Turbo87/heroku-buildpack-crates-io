@@ -68,16 +68,6 @@ EOF
     exit 1
 fi
 
-# Handle people who still aren't using Rustup.
-if [ ! -z ${URL+x} ]; then
-    >&2 cat <<EOF
-heroku-pack-rust has switched to using rustup.  You no longer need a
-URL field in RustConfig. Instead, you should just specify a
-rustup-compatible version (such as `1.11`, `stable` or `nighty`) in VERSION.
-EOF
-    exit 1
-fi
-
 # Record our Rust build environment configuration in an export file, in
 # case another buildpack needs it to build Ruby gems that use Rust or
 # something like that.
