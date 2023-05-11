@@ -58,17 +58,15 @@ cd "$CACHE_DIR"
 
 # Make sure we have an appropriate Rust toolchain installed.
 if [ -d "$CARGO_HOME" ]; then
-    echo "-----> Checking for new releases of rustup"
+    echo "-----> Updating rustup"
     rustup self update
 
-    echo "-----> Checking for new releases of Rust"
+    echo "-----> Updating Rust"
     rustup update --no-self-update
 else
-    echo "-----> Downloading rustup"
+    echo "-----> Installing rustup"
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
     chmod u+x rustup.sh
-
-    echo "-----> Installing rustup"
     ./rustup.sh -y --default-toolchain none
     rm rustup.sh
 
@@ -94,7 +92,7 @@ export CARGO_TARGET_DIR="$CACHE_DIR/target"
 # To debug git issues:
 #export RUST_LOG="cargo::sources::git=debug"
 # To debug compiler and linking issues, add `--verbose`.
-echo "-----> Building application using Cargo"
+echo "-----> Building application"
 cd "$BUILD_DIR/$BUILD_PATH"
 rm -rf target/
 cargo build $RUST_CARGO_BUILD_FLAGS
