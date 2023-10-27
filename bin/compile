@@ -1,107 +1,80 @@
 #!/bin/bash
 
-# Find all the directories we might need (based on
-# heroku-buildpack-nodejs code).
-BUILD_DIR=${1:-}
-CACHE_DIR=${2:-}
-ENV_DIR=${3:-}
-BP_DIR=$(cd $(dirname ${0:-}); cd ..; pwd)
-
-# Export DATABASE_URL at build time, mostly because Diesel is the best way to
-# do SQL in Rust right now, and Diesel will use it to generate code for the
-# database schema.
-if [ -e "$ENV_DIR/DATABASE_URL" ]; then
-  export DATABASE_URL="$(cat $ENV_DIR/DATABASE_URL)";
-fi
-
-# If your Rust code is not at the root directory of the repository, specify a
-# `BUILD_PATH` to the correct directory in the `RustConfig`
-BUILD_PATH=""
-
-# Default build flags to pass to `cargo build`.
-RUST_CARGO_BUILD_FLAGS="--release"
-
-# Load our configuration variables, if any were specified.
-if [ -f "$BUILD_DIR/RustConfig" ]; then
-    . "$BUILD_DIR/RustConfig"
-fi
-
-# Standard paranoia.
 set -eu
 
-# Record our Rust build environment configuration in an export file, in
-# case another buildpack needs it to build Ruby gems that use Rust or
-# something like that.
-cat <<EOF > $BP_DIR/export
-# Our rustup installation.
-export RUSTUP_HOME="$CACHE_DIR/rustup"
+# see https://devcenter.heroku.com/articles/buildpack-api#bin-compile
+BUILD_DIR=${1:-}
+CACHE_DIR=${2:-}
 
-# Our cargo installation.  We implicitly trust Rustup and Cargo
-# to do the right thing when new versions are released.
-export CARGO_HOME="$CACHE_DIR/cargo"
-
-# Disable incremental compilation, so that the Rust compiler doesn't
-# waste time creating the additional artifacts required for incremental
-# builds.
-export CARGO_INCREMENTAL=0
-
-# Include binaries installed by cargo and rustup in our path.
-PATH="\$CARGO_HOME/bin:\$PATH"
-EOF
-
-# Read our build environment back in and evaluate it so that we can use it.
-. $BP_DIR/export
-
-# Switch to our cache directory.
+cd "$BUILD_DIR"
 mkdir -p "$CACHE_DIR"
-cd "$CACHE_DIR"
 
-# Make sure we have an appropriate Rust toolchain installed.
-if [ -d "$CARGO_HOME" ]; then
-    echo "-----> Updating rustup"
-    rustup self update
+### Install Node.js & pnpm and build frontend
 
-    # Skip installation of `rust-docs`, `rustfmt` and `clippy`
-    rustup set profile minimal
+JQ_VERSION="1.7"
+JQ="$CACHE_DIR/jq-$JQ_VERSION"
 
-    rustup update --no-self-update
+if [ ! -x "$JQ" ]; then
+    echo "-----> Installing jq v$JQ_VERSION"
+    curl --proto '=https' --tlsv1.2 --location https://github.com/jqlang/jq/releases/download/jq-1.7/jq-linux-i386 --output "$JQ"
+    chmod +x "$JQ"
 else
-    echo "-----> Installing rustup"
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rustup.sh
-    chmod u+x rustup.sh
-    ./rustup.sh -y --default-toolchain none
-    rm rustup.sh
-
-    # Skip installation of `rust-docs`, `rustfmt` and `clippy`
-    rustup set profile minimal
+    echo "-----> jq v$JQ_VERSION already installed"
 fi
 
-if [ ! -x "$CARGO_HOME/bin/rustc" ]; then
-  echo "failed: Cannot find Rust binaries at $CARGO_HOME"
-  exit 1
+echo "-----> Parsing pnpm version from \`package.json\` file"
+PNPM_VERSION="$($JQ ".engines.pnpm" "package.json" --raw-output)"
+export PNPM_VERSION
+
+export PNPM_HOME="$CACHE_DIR/pnpm"
+
+echo "-----> Installing pnpm v$PNPM_VERSION"
+curl -fsSL https://get.pnpm.io/install.sh | ENV="$CACHE_DIR/.shrc" SHELL="$(which sh)" sh -
+
+export PATH="$PNPM_HOME:$PATH"
+
+echo "-----> Parsing Node.js version from \`package.json\` file"
+NODE_VERSION="$($JQ ".engines.node" "package.json" --raw-output)"
+
+if [ ! -x "$PNPM_HOME/nodejs/$NODE_VERSION" ]; then
+    echo "-----> Installing Node.js v$NODE_VERSION"
+    pnpm env use --global "$NODE_VERSION"
+else
+    echo "-----> Node.js v$NODE_VERSION already installed"
 fi
 
-# This is where we will cache our Rust output.  Note the suggestions at
-# https://github.com/alexcrichton/cargo/commit/014765f788ca1c2476936835ca32cc2746f99b42
-# which describe how this needs to be named.
+echo "-----> pnpm install"
+pnpm install
+
+echo "-----> pnpm run build"
+pnpm run build
+
+echo "-----> rm -rf node_modules"
+rm -rf node_modules
+
+### Install Rust and build backend
+
+export RUSTUP_HOME="$CACHE_DIR/rustup"
+export CARGO_HOME="$CACHE_DIR/cargo"
 export CARGO_TARGET_DIR="$CACHE_DIR/target"
 
-# Build our project (into CARGO_TARGET_DIR so we have caching) and copy it
-# back to the source tree.  In theory, we could probably just copy the
-# binary or do something clever with `cargo install`, but we haven't
-# figured that out yet.
-#
-# To debug git issues:
-#export RUST_LOG="cargo::sources::git=debug"
-# To debug compiler and linking issues, add `--verbose`.
-echo "-----> Building application"
-cd "$BUILD_DIR/$BUILD_PATH"
-rm -rf target/
-cargo build $RUST_CARGO_BUILD_FLAGS
-mkdir -p target/release
+if [ ! -x "$CARGO_HOME/bin/rustup" ]; then
+    echo "-----> Installing rustup"
+    curl --proto '=https' --tlsv1.2 https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+else
+    echo "-----> rustup already installed"
+fi
 
-# Copy compiled binaries from the cached `target` folder so that they are
-# available at e.g. `./target/release/foo`
+export PATH="$CARGO_HOME/bin:$PATH"
+
+echo "-----> rustup set profile minimal"
+rustup set profile minimal
+
+echo "-----> cargo build"
+cargo build --release
+
+echo "-----> Copying compiled binaries into \`./target/release\` folder"
+mkdir -p target/release
 find "$CARGO_TARGET_DIR/release" -maxdepth 1 -type f -executable -exec cp -a -t target/release {} \;
 
 echo "-----> Cleaning up cache folder"
