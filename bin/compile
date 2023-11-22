@@ -2,6 +2,8 @@
 
 set -eu
 
+BUILDPACK_DIR="$(dirname "$(dirname "$0")")"
+
 # see https://devcenter.heroku.com/articles/buildpack-api#bin-compile
 BUILD_DIR=${1:-}
 CACHE_DIR=${2:-}
@@ -29,7 +31,8 @@ export PNPM_VERSION
 export PNPM_HOME="$CACHE_DIR/pnpm"
 
 echo "-----> Installing pnpm v$PNPM_VERSION"
-curl -fsSL https://get.pnpm.io/install.sh | ENV="$CACHE_DIR/.shrc" SHELL="$(which sh)" sh -
+# see https://github.com/pnpm/get.pnpm.io/pull/35 for why the install script is vendored
+ENV="$CACHE_DIR/.shrc" SHELL="$(which sh)" sh "$BUILDPACK_DIR/install_pnpm.sh"
 
 export PATH="$PNPM_HOME:$PATH"
 
