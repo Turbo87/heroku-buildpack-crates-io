@@ -18,7 +18,7 @@ JQ="$CACHE_DIR/jq-$JQ_VERSION"
 
 if [ ! -x "$JQ" ]; then
     echo "-----> Installing jq v$JQ_VERSION"
-    curl --proto '=https' --tlsv1.2 --location https://github.com/jqlang/jq/releases/download/jq-1.7/jq-linux-amd64 --output "$JQ"
+    curl --proto '=https' --tlsv1.2 --location https://github.com/jqlang/jq/releases/download/jq-$JQ_VERSION/jq-linux-amd64 --output "$JQ"
     chmod +x "$JQ"
 else
     echo "-----> jq v$JQ_VERSION already installed"
