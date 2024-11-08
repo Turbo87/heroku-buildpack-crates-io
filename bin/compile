@@ -13,7 +13,7 @@ mkdir -p "$CACHE_DIR"
 
 ### Install Node.js & pnpm and build frontend
 
-JQ_VERSION="1.7"
+JQ_VERSION="1.7.1"
 JQ="$CACHE_DIR/jq-$JQ_VERSION"
 
 if [ ! -x "$JQ" ]; then
