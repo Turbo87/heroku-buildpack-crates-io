@@ -73,6 +73,9 @@ export PATH="$CARGO_HOME/bin:$PATH"
 echo "-----> rustup set profile minimal"
 rustup set profile minimal
 
+echo "-----> rustup toolchain install"
+rustup toolchain install
+
 echo "-----> cargo build"
 cargo build --release
 
