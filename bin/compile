@@ -9,11 +9,16 @@ BUILD_DIR=${1:-}
 CACHE_DIR=${2:-}
 
 cd "$BUILD_DIR"
+mkdir -p "$BUILD_DIR/bin"
 mkdir -p "$CACHE_DIR"
+
+JQ_VERSION="1.7.1"
+TYPST_VERSION="0.13.1"
+OXIPNG_VERSION="9.1.5"
+FIRA_SANS_VERSION="4.202"
 
 ### Install Node.js & pnpm and build frontend
 
-JQ_VERSION="1.7.1"
 JQ="$CACHE_DIR/jq-$JQ_VERSION"
 
 if [ ! -x "$JQ" ]; then
@@ -22,6 +27,81 @@ if [ ! -x "$JQ" ]; then
     chmod +x "$JQ"
 else
     echo "-----> jq v$JQ_VERSION already installed"
+fi
+
+### Install typst CLI
+
+TYPST_ARCHIVE="$CACHE_DIR/typst-$TYPST_VERSION.tar.xz"
+TYPST_BINARY="$BUILD_DIR/bin/typst"
+
+if [ ! -x "$TYPST_BINARY" ]; then
+    echo "-----> Installing typst v$TYPST_VERSION"
+    if [ ! -f "$TYPST_ARCHIVE" ]; then
+        curl --proto '=https' --tlsv1.2 --location https://github.com/typst/typst/releases/download/v$TYPST_VERSION/typst-x86_64-unknown-linux-musl.tar.xz --output "$TYPST_ARCHIVE"
+    fi
+    tar -xf "$TYPST_ARCHIVE" -C /tmp
+    cp /tmp/typst-x86_64-unknown-linux-musl/typst "$TYPST_BINARY"
+    chmod +x "$TYPST_BINARY"
+    rm -rf /tmp/typst-x86_64-unknown-linux-musl
+else
+    echo "-----> typst v$TYPST_VERSION already installed"
+fi
+
+### Install oxipng CLI
+
+OXIPNG_ARCHIVE="$CACHE_DIR/oxipng-$OXIPNG_VERSION.tar.gz"
+OXIPNG_BINARY="$BUILD_DIR/bin/oxipng"
+
+if [ ! -x "$OXIPNG_BINARY" ]; then
+    echo "-----> Installing oxipng v$OXIPNG_VERSION"
+    if [ ! -f "$OXIPNG_ARCHIVE" ]; then
+        curl --proto '=https' --tlsv1.2 --location https://github.com/oxipng/oxipng/releases/download/v$OXIPNG_VERSION/oxipng-$OXIPNG_VERSION-x86_64-unknown-linux-musl.tar.gz --output "$OXIPNG_ARCHIVE"
+    fi
+    tar -xf "$OXIPNG_ARCHIVE" -C /tmp
+    cp /tmp/oxipng-$OXIPNG_VERSION-x86_64-unknown-linux-musl/oxipng "$OXIPNG_BINARY"
+    chmod +x "$OXIPNG_BINARY"
+    rm -rf /tmp/oxipng-$OXIPNG_VERSION-x86_64-unknown-linux-musl
+else
+    echo "-----> oxipng v$OXIPNG_VERSION already installed"
+fi
+
+### Setup PATH for runtime
+mkdir -p "$BUILD_DIR/.profile.d"
+cat > "$BUILD_DIR/.profile.d/buildpack.sh" << 'EOF'
+export PATH="/app/bin:$PATH"
+EOF
+
+### Install Fira Sans font
+
+FIRA_SANS_DIR="$BUILD_DIR/.fonts"
+
+if [ ! -d "$FIRA_SANS_DIR" ] || [ ! -f "$FIRA_SANS_DIR/FiraSans-Regular.ttf" ]; then
+    echo "-----> Installing Fira Sans font v$FIRA_SANS_VERSION"
+    mkdir -p "$FIRA_SANS_DIR"
+
+    # Download Fira Sans font files
+    FIRA_SANS_CACHE="$CACHE_DIR/fira-sans-$FIRA_SANS_VERSION"
+    if [ ! -d "$FIRA_SANS_CACHE" ]; then
+        mkdir -p "$FIRA_SANS_CACHE"
+        # Download from Mozilla's official repository
+        curl --proto '=https' --tlsv1.2 --location https://github.com/mozilla/Fira/archive/refs/tags/$FIRA_SANS_VERSION.zip --output "$FIRA_SANS_CACHE/fira-$FIRA_SANS_VERSION.zip"
+        unzip -q "$FIRA_SANS_CACHE/fira-$FIRA_SANS_VERSION.zip" -d "$FIRA_SANS_CACHE"
+    fi
+
+    # Copy TTF files to user font directory
+    cp "$FIRA_SANS_CACHE/Fira-$FIRA_SANS_VERSION/ttf/FiraSans"*.ttf "$FIRA_SANS_DIR/"
+
+    # Create fontconfig directory and config
+    mkdir -p "$BUILD_DIR/.config/fontconfig"
+    cat > "$BUILD_DIR/.config/fontconfig/fonts.conf" << 'EOF'
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+<fontconfig>
+    <dir>~/.fonts</dir>
+</fontconfig>
+EOF
+else
+    echo "-----> Fira Sans font v$FIRA_SANS_VERSION already installed"
 fi
 
 echo "-----> Parsing pnpm version from \`package.json\` file"
