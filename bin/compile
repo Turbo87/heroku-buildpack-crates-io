@@ -16,6 +16,14 @@ JQ_VERSION="1.7.1"
 TYPST_VERSION="0.13.1"
 OXIPNG_VERSION="9.1.5"
 FIRA_SANS_VERSION="4.202"
+GIT_VERSION="2.50.0"
+
+### Setup PATH for runtime
+
+mkdir -p "$BUILD_DIR/.profile.d"
+cat > "$BUILD_DIR/.profile.d/buildpack.sh" << 'EOF'
+export PATH="/app/bin:$PATH"
+EOF
 
 ### Install Node.js & pnpm and build frontend
 
@@ -27,6 +35,40 @@ if [ ! -x "$JQ" ]; then
     chmod +x "$JQ"
 else
     echo "-----> jq v$JQ_VERSION already installed"
+fi
+
+### Install git CLI
+
+GIT_DEB="$CACHE_DIR/git-$GIT_VERSION.deb"
+GIT_BINARY="$BUILD_DIR/bin/git"
+
+if [ ! -x "$GIT_BINARY" ]; then
+    echo "-----> Installing git v$GIT_VERSION"
+    if [ ! -f "$GIT_DEB" ]; then
+        # Download git deb package from Ubuntu repositories
+        curl --proto '=https' --tlsv1.2 --location "http://archive.ubuntu.com/ubuntu/pool/main/g/git/git_2.43.0-1ubuntu7.1_amd64.deb" --output "$GIT_DEB"
+    fi
+
+    # Extract git deb package
+    dpkg-deb -x "$GIT_DEB" /tmp/git-extract
+
+    # Copy git binaries to bin/
+    cp /tmp/git-extract/usr/bin/git* "$BUILD_DIR/bin/" 2>/dev/null || true
+    cp /tmp/git-extract/usr/bin/git "$BUILD_DIR/bin/"
+
+    # Copy git libexec files (git subcommands)
+    mkdir -p "$BUILD_DIR/libexec/git-core"
+    cp -r /tmp/git-extract/usr/libexec/git-core/* "$BUILD_DIR/libexec/git-core/" 2>/dev/null || true
+
+    # Set up git exec path in profile
+    cat >> "$BUILD_DIR/.profile.d/buildpack.sh" << 'EOF'
+export GIT_EXEC_PATH="/app/libexec/git-core"
+EOF
+
+    # Clean up
+    rm -rf /tmp/git-extract
+else
+    echo "-----> git v$GIT_VERSION already installed"
 fi
 
 ### Install typst CLI
@@ -64,12 +106,6 @@ if [ ! -x "$OXIPNG_BINARY" ]; then
 else
     echo "-----> oxipng v$OXIPNG_VERSION already installed"
 fi
-
-### Setup PATH for runtime
-mkdir -p "$BUILD_DIR/.profile.d"
-cat > "$BUILD_DIR/.profile.d/buildpack.sh" << 'EOF'
-export PATH="/app/bin:$PATH"
-EOF
 
 ### Install Fira Sans font
 
