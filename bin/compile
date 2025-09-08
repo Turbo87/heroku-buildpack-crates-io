@@ -16,6 +16,7 @@ JQ_VERSION="1.7.1"
 TYPST_VERSION="0.13.1"
 OXIPNG_VERSION="9.1.5"
 FIRA_SANS_VERSION="4.202"
+NOTO_EMOJI_VERSION="2.048"
 
 ### Install Node.js & pnpm and build frontend
 
@@ -71,13 +72,25 @@ cat > "$BUILD_DIR/.profile.d/buildpack.sh" << 'EOF'
 export PATH="/app/bin:$PATH"
 EOF
 
-### Install Fira Sans font
+### Setup fonts directory
 
-FIRA_SANS_DIR="$BUILD_DIR/.fonts"
+FONTS_DIR="$BUILD_DIR/.fonts"
+mkdir -p "$FONTS_DIR"
 
-if [ ! -d "$FIRA_SANS_DIR" ] || [ ! -f "$FIRA_SANS_DIR/FiraSans-Regular.ttf" ]; then
+# Create fontconfig directory and config
+mkdir -p "$BUILD_DIR/.config/fontconfig"
+cat > "$BUILD_DIR/.config/fontconfig/fonts.conf" << 'EOF'
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+<fontconfig>
+    <dir>~/.fonts</dir>
+</fontconfig>
+EOF
+
+### Install fonts for OG image generation
+
+if [ ! -f "$FONTS_DIR/FiraSans-Regular.ttf" ]; then
     echo "-----> Installing Fira Sans font v$FIRA_SANS_VERSION"
-    mkdir -p "$FIRA_SANS_DIR"
 
     # Download Fira Sans font files
     FIRA_SANS_CACHE="$CACHE_DIR/fira-sans-$FIRA_SANS_VERSION"
@@ -89,19 +102,27 @@ if [ ! -d "$FIRA_SANS_DIR" ] || [ ! -f "$FIRA_SANS_DIR/FiraSans-Regular.ttf" ]; 
     fi
 
     # Copy TTF files to user font directory
-    cp "$FIRA_SANS_CACHE/Fira-$FIRA_SANS_VERSION/ttf/FiraSans"*.ttf "$FIRA_SANS_DIR/"
-
-    # Create fontconfig directory and config
-    mkdir -p "$BUILD_DIR/.config/fontconfig"
-    cat > "$BUILD_DIR/.config/fontconfig/fonts.conf" << 'EOF'
-<?xml version="1.0"?>
-<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
-<fontconfig>
-    <dir>~/.fonts</dir>
-</fontconfig>
-EOF
+    cp "$FIRA_SANS_CACHE/Fira-$FIRA_SANS_VERSION/ttf/FiraSans"*.ttf "$FONTS_DIR/"
 else
     echo "-----> Fira Sans font v$FIRA_SANS_VERSION already installed"
+fi
+
+NOTO_CJK_FILE="$FONTS_DIR/NotoSansCJK-Regular.ttc"
+
+if [ ! -f "$NOTO_CJK_FILE" ]; then
+    echo "-----> Installing Noto Sans CJK font"
+    curl --proto '=https' --tlsv1.2 --location "https://github.com/notofonts/noto-cjk/raw/refs/tags/Sans2.004/Sans/OTC/NotoSansCJK-Regular.ttc" --output "$NOTO_CJK_FILE"
+else
+    echo "-----> Noto Sans CJK font already installed"
+fi
+
+NOTO_EMOJI_FILE="$FONTS_DIR/NotoColorEmoji.ttf"
+
+if [ ! -f "$NOTO_EMOJI_FILE" ]; then
+    echo "-----> Installing Noto Color Emoji font v$NOTO_EMOJI_VERSION"
+    curl --proto '=https' --tlsv1.2 --location "https://github.com/googlefonts/noto-emoji/raw/refs/tags/v$NOTO_EMOJI_VERSION/fonts/NotoColorEmoji.ttf" --output "$NOTO_EMOJI_FILE"
+else
+    echo "-----> Noto Color Emoji font v$NOTO_EMOJI_VERSION already installed"
 fi
 
 echo "-----> Parsing pnpm version from \`package.json\` file"
