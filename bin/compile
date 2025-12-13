@@ -153,6 +153,11 @@ pnpm install
 echo "-----> pnpm run build"
 pnpm run build
 
+echo "-----> pnpm run build (Svelte)"
+cd "$BUILD_DIR/svelte"
+pnpm run build
+cd "$BUILD_DIR"
+
 echo "-----> rm -rf node_modules"
 rm -rf node_modules
 
