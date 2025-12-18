@@ -12,23 +12,23 @@ cd "$BUILD_DIR"
 mkdir -p "$BUILD_DIR/bin"
 mkdir -p "$CACHE_DIR"
 
-JQ_VERSION="1.7.1"
 TYPST_VERSION="0.13.1"
 OXIPNG_VERSION="9.1.5"
 FIRA_SANS_VERSION="4.202"
 NOTO_EMOJI_VERSION="2.048"
 
-### Install Node.js & pnpm and build frontend
-
-JQ="$CACHE_DIR/jq-$JQ_VERSION"
-
-if [ ! -x "$JQ" ]; then
-    echo "-----> Installing jq v$JQ_VERSION"
-    curl --proto '=https' --tlsv1.2 --location https://github.com/jqlang/jq/releases/download/jq-$JQ_VERSION/jq-linux-amd64 --output "$JQ"
-    chmod +x "$JQ"
-else
-    echo "-----> jq v$JQ_VERSION already installed"
-fi
+# Helper function to read a tool version from .tool-versions file
+# Usage: read_tool_version <tool-name>
+read_tool_version() {
+    local tool="$1"
+    local version
+    version=$(grep "^$tool " .tool-versions 2>/dev/null | awk '{print $2}')
+    if [ -z "$version" ]; then
+        echo "ERROR: Could not find '$tool' version in .tool-versions file" >&2
+        exit 1
+    fi
+    echo "$version"
+}
 
 ### Install typst CLI
 
@@ -125,8 +125,10 @@ else
     echo "-----> Noto Color Emoji font v$NOTO_EMOJI_VERSION already installed"
 fi
 
-echo "-----> Parsing pnpm version from \`package.json\` file"
-PNPM_VERSION="$($JQ ".engines.pnpm" "package.json" --raw-output)"
+### Install Node.js & pnpm and build frontend
+
+echo "-----> Parsing pnpm version from \`.tool-versions\` file"
+PNPM_VERSION="$(read_tool_version pnpm)"
 export PNPM_VERSION
 
 export PNPM_HOME="$CACHE_DIR/pnpm"
@@ -137,8 +139,8 @@ ENV="$CACHE_DIR/.shrc" SHELL="$(which sh)" sh "$BUILDPACK_DIR/install_pnpm.sh"
 
 export PATH="$PNPM_HOME:$PATH"
 
-echo "-----> Parsing Node.js version from \`package.json\` file"
-NODE_VERSION="$($JQ ".engines.node" "package.json" --raw-output)"
+echo "-----> Parsing Node.js version from \`.tool-versions\` file"
+NODE_VERSION="$(read_tool_version nodejs)"
 
 if [ ! -x "$PNPM_HOME/nodejs/$NODE_VERSION" ]; then
     echo "-----> Installing Node.js v$NODE_VERSION"
