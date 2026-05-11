@@ -139,12 +139,8 @@ export PATH="$PNPM_HOME/bin:$PATH"
 echo "-----> Parsing Node.js version from \`.tool-versions\` file"
 NODE_VERSION="$(read_tool_version nodejs)"
 
-if [ ! -x "$PNPM_HOME/nodejs/$NODE_VERSION" ]; then
-    echo "-----> Installing Node.js v$NODE_VERSION"
-    pnpm env use --global "$NODE_VERSION"
-else
-    echo "-----> Node.js v$NODE_VERSION already installed"
-fi
+echo "-----> pnpm env use --global $NODE_VERSION"
+pnpm env use --global "$NODE_VERSION"
 
 echo "-----> pnpm install"
 pnpm install
