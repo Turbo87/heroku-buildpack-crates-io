@@ -56,6 +56,9 @@ if [ ! -f "$FONTS_DIR/FiraSans-Regular.ttf" ]; then
 
     # Copy TTF files to user font directory
     cp "$FIRA_SANS_CACHE/Fira-$FIRA_SANS_VERSION/ttf/FiraSans"*.ttf "$FONTS_DIR/"
+
+    # Remove the zip archive to save cache space
+    rm -f "$FIRA_SANS_CACHE/fira-$FIRA_SANS_VERSION.zip"
 else
     echo "-----> Fira Sans font v$FIRA_SANS_VERSION already installed"
 fi
