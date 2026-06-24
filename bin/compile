@@ -155,6 +155,16 @@ du -sh "$CACHE_DIR" 2>/dev/null || true
 
 echo "-----> Cleaning up cache folder"
 
+# Remove rustup toolchains that are not the active one
+ACTIVE_TOOLCHAIN=$(rustup show active-toolchain | awk '{print $1}')
+rustup toolchain list | while read -r line; do
+  toolchain=$(echo "$line" | awk '{print $1}')
+  if [ "$toolchain" != "$ACTIVE_TOOLCHAIN" ]; then
+    echo "       Removing old toolchain: $toolchain"
+    rustup toolchain uninstall "$toolchain"
+  fi
+done
+
 # We can remove this completely, as cargo will recreate this from `cache`
 rm -rf "$CARGO_HOME/registry/src"
 
