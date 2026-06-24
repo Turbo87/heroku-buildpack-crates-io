@@ -165,8 +165,13 @@ rustup toolchain list | while read -r line; do
   fi
 done
 
-# We can remove this completely, as cargo will recreate this from `cache`
+# We can remove this completely, as cargo will recreate this from `registry/cache`
 rm -rf "$CARGO_HOME/registry/src"
+
+# Remove old .crate files that haven't been used in the past 20 days
+if [ -d "$CARGO_HOME/registry/cache" ]; then
+  find "$CARGO_HOME/registry/cache" -type f -name "*.crate" -mtime +20 -exec rm -f {} \;
+fi
 
 # Remove dependencies that haven't been touched in the past 20 days
 if [ -d "$CARGO_TARGET_DIR/release/.fingerprint" ]; then
