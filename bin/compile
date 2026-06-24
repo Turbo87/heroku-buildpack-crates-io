@@ -50,7 +50,7 @@ if [ ! -f "$FONTS_DIR/FiraSans-Regular.ttf" ]; then
     if [ ! -d "$FIRA_SANS_CACHE" ]; then
         mkdir -p "$FIRA_SANS_CACHE"
         # Download from Mozilla's official repository
-        curl --proto '=https' --tlsv1.2 --location https://github.com/mozilla/Fira/archive/refs/tags/$FIRA_SANS_VERSION.zip --output "$FIRA_SANS_CACHE/fira-$FIRA_SANS_VERSION.zip"
+        curl --fail --proto '=https' --tlsv1.2 --location https://github.com/mozilla/Fira/archive/refs/tags/$FIRA_SANS_VERSION.zip --output "$FIRA_SANS_CACHE/fira-$FIRA_SANS_VERSION.zip"
         unzip -q "$FIRA_SANS_CACHE/fira-$FIRA_SANS_VERSION.zip" -d "$FIRA_SANS_CACHE"
     fi
 
@@ -67,7 +67,7 @@ NOTO_CJK_FILE="$FONTS_DIR/NotoSansCJK-Regular.ttc"
 
 if [ ! -f "$NOTO_CJK_FILE" ]; then
     echo "-----> Installing Noto Sans CJK font"
-    curl --proto '=https' --tlsv1.2 --location "https://github.com/notofonts/noto-cjk/raw/refs/tags/Sans2.004/Sans/OTC/NotoSansCJK-Regular.ttc" --output "$NOTO_CJK_FILE"
+    curl --fail --proto '=https' --tlsv1.2 --location "https://github.com/notofonts/noto-cjk/raw/refs/tags/Sans2.004/Sans/OTC/NotoSansCJK-Regular.ttc" --output "$NOTO_CJK_FILE"
 else
     echo "-----> Noto Sans CJK font already installed"
 fi
@@ -76,7 +76,7 @@ NOTO_EMOJI_FILE="$FONTS_DIR/NotoColorEmoji.ttf"
 
 if [ ! -f "$NOTO_EMOJI_FILE" ]; then
     echo "-----> Installing Noto Color Emoji font v$NOTO_EMOJI_VERSION"
-    curl --proto '=https' --tlsv1.2 --location "https://github.com/googlefonts/noto-emoji/raw/refs/tags/v$NOTO_EMOJI_VERSION/fonts/NotoColorEmoji.ttf" --output "$NOTO_EMOJI_FILE"
+    curl --fail --proto '=https' --tlsv1.2 --location "https://github.com/googlefonts/noto-emoji/raw/refs/tags/v$NOTO_EMOJI_VERSION/fonts/NotoColorEmoji.ttf" --output "$NOTO_EMOJI_FILE"
 else
     echo "-----> Noto Color Emoji font v$NOTO_EMOJI_VERSION already installed"
 fi
@@ -125,7 +125,7 @@ export CARGO_TARGET_DIR="$CACHE_DIR/target"
 
 if [ ! -x "$CARGO_HOME/bin/rustup" ]; then
     echo "-----> Installing rustup"
-    curl --proto '=https' --tlsv1.2 https://sh.rustup.rs | sh -s -- --default-toolchain none -y
+    curl --fail --proto '=https' --tlsv1.2 https://sh.rustup.rs | sh -s -- --default-toolchain none -y
 else
     echo "-----> rustup already installed"
 fi
