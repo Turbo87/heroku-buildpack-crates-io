@@ -139,6 +139,17 @@ echo "-----> Copying compiled binaries into \`./target/release\` folder"
 mkdir -p target/release
 find "$CARGO_TARGET_DIR/release" -maxdepth 1 -type f -executable -exec cp -a -t target/release {} \;
 
+echo "-----> Cache size before cleanup"
+du -sh "$CACHE_DIR/pnpm" 2>/dev/null || true
+du -sh "$CACHE_DIR/rustup" 2>/dev/null || true
+du -sh "$CARGO_HOME/registry/cache" 2>/dev/null || true
+du -sh "$CARGO_HOME/registry/src" 2>/dev/null || true
+du -sh "$CARGO_TARGET_DIR/release/.fingerprint" 2>/dev/null || true
+du -sh "$CARGO_TARGET_DIR/release/build" 2>/dev/null || true
+du -sh "$CARGO_TARGET_DIR/release/deps" 2>/dev/null || true
+du -sh "$CARGO_TARGET_DIR/release/incremental" 2>/dev/null || true
+du -sh "$CACHE_DIR" 2>/dev/null || true
+
 echo "-----> Cleaning up cache folder"
 
 # We can remove this completely, as cargo will recreate this from `cache`
@@ -154,3 +165,6 @@ fi
 if [ -d "$CARGO_TARGET_DIR/release/deps" ]; then
   find "$CARGO_TARGET_DIR/release/deps" -maxdepth 1 -type d -mtime +20 -exec rm -rf {} \;
 fi
+
+echo "-----> Cache size after cleanup"
+du -sh "$CACHE_DIR" 2>/dev/null || true
