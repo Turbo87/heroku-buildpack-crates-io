@@ -171,20 +171,20 @@ done
 # We can remove this completely, as cargo will recreate this from `registry/cache`
 rm -rf "$CARGO_HOME/registry/src"
 
-# Remove old .crate files that haven't been used in the past 20 days
+# Remove old .crate files that haven't been used in the past 4 days
 if [ -d "$CARGO_HOME/registry/cache" ]; then
-  find "$CARGO_HOME/registry/cache" -type f -name "*.crate" -mtime +20 -exec rm -f {} \;
+  find "$CARGO_HOME/registry/cache" -type f -name "*.crate" -mtime +4 -exec rm -f {} \;
 fi
 
-# Remove dependencies that haven't been touched in the past 20 days
+# Remove dependencies that haven't been touched in the past 4 days
 if [ -d "$CARGO_TARGET_DIR/release/.fingerprint" ]; then
-  find "$CARGO_TARGET_DIR/release/.fingerprint" -maxdepth 1 -type d -mtime +20 -exec rm -rf {} \;
+  find "$CARGO_TARGET_DIR/release/.fingerprint" -maxdepth 1 -type d -mtime +4 -exec rm -rf {} \;
 fi
 if [ -d "$CARGO_TARGET_DIR/release/build" ]; then
-  find "$CARGO_TARGET_DIR/release/build" -maxdepth 1 -type d -mtime +20 -exec rm -rf {} \;
+  find "$CARGO_TARGET_DIR/release/build" -maxdepth 1 -type d -mtime +4 -exec rm -rf {} \;
 fi
 if [ -d "$CARGO_TARGET_DIR/release/deps" ]; then
-  find "$CARGO_TARGET_DIR/release/deps" -maxdepth 1 -type f -mtime +20 -exec rm -f {} \;
+  find "$CARGO_TARGET_DIR/release/deps" -maxdepth 1 -type f -mtime +4 -exec rm -f {} \;
 fi
 
 echo "-----> Cache size after cleanup"
