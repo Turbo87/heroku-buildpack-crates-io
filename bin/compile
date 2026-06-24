@@ -114,6 +114,9 @@ cd "$BUILD_DIR"
 echo "-----> rm -rf node_modules"
 rm -rf node_modules
 
+echo "-----> pnpm store prune"
+pnpm store prune
+
 ### Install Rust and build backend
 
 export RUSTUP_HOME="$CACHE_DIR/rustup"
