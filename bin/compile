@@ -172,6 +172,9 @@ rustup toolchain list | while read -r line; do
   fi
 done
 
+# Remove rustup download and extraction caches
+rm -rf "$RUSTUP_HOME/downloads" "$RUSTUP_HOME/tmp"
+
 # We can remove this completely, as cargo will recreate this from `registry/cache`
 rm -rf "$CARGO_HOME/registry/src"
 
