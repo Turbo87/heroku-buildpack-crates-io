@@ -12,19 +12,6 @@ mkdir -p "$CACHE_DIR"
 FIRA_SANS_VERSION="4.202"
 NOTO_EMOJI_VERSION="2.048"
 
-# Helper function to read a tool version from .tool-versions file
-# Usage: read_tool_version <tool-name>
-read_tool_version() {
-    local tool="$1"
-    local version
-    version=$(grep "^$tool " .tool-versions 2>/dev/null | awk '{print $2}')
-    if [ -z "$version" ]; then
-        echo "ERROR: Could not find '$tool' version in .tool-versions file" >&2
-        exit 1
-    fi
-    echo "$version"
-}
-
 ### Setup fonts directory
 
 FONTS_DIR="$BUILD_DIR/.fonts"
@@ -83,22 +70,26 @@ fi
 
 ### Install Node.js & pnpm and build frontend
 
-echo "-----> Parsing pnpm version from \`.tool-versions\` file"
-PNPM_VERSION="$(read_tool_version pnpm)"
-export PNPM_VERSION
+MISE_VERSION="v2026.7.0"
+export MISE_VERSION
+
+export MISE_DATA_DIR="$CACHE_DIR/mise"
+export MISE_INSTALL_PATH="$MISE_DATA_DIR/bin/mise"
+
+if [ -x "$MISE_INSTALL_PATH" ] && [ "$("$MISE_INSTALL_PATH" --version | awk '{print $1}')" = "${MISE_VERSION#v}" ]; then
+    echo "-----> mise $MISE_VERSION already installed"
+else
+    echo "-----> Installing mise $MISE_VERSION"
+    curl --fail --proto '=https' --tlsv1.2 https://mise.run | sh
+fi
+
+export PATH="$MISE_DATA_DIR/bin:$MISE_DATA_DIR/shims:$PATH"
+
+echo "-----> mise install"
+mise trust
+mise install node pnpm
 
 export PNPM_HOME="$CACHE_DIR/pnpm"
-
-echo "-----> Installing pnpm v$PNPM_VERSION"
-curl -fsSL https://get.pnpm.io/install.sh | ENV="$CACHE_DIR/.shrc" SHELL="$(which sh)" sh -
-
-export PATH="$PNPM_HOME/bin:$PATH"
-
-echo "-----> Parsing Node.js version from \`.tool-versions\` file"
-NODE_VERSION="$(read_tool_version nodejs)"
-
-echo "-----> pnpm env use --global $NODE_VERSION"
-pnpm env use --global "$NODE_VERSION"
 
 echo "-----> pnpm install"
 pnpm install
@@ -125,6 +116,7 @@ export CARGO_TARGET_DIR="$CACHE_DIR/target"
 
 report_cache_sizes() {
   du -sh "$CACHE_DIR" 2>/dev/null || true
+  du -sh "$CACHE_DIR/mise" 2>/dev/null || true
   du -sh "$CACHE_DIR/pnpm" 2>/dev/null || true
   du -sh "$CACHE_DIR/rustup" 2>/dev/null || true
   du -sh "$CARGO_HOME/registry/cache" 2>/dev/null || true
@@ -161,6 +153,9 @@ echo "-----> Cache size before cleanup"
 report_cache_sizes
 
 echo "-----> Cleaning up cache folder"
+
+# Remove tool versions that are no longer referenced by the mise config
+mise prune
 
 # Remove rustup toolchains that are not the active one
 ACTIVE_TOOLCHAIN=$(rustup show active-toolchain | awk '{print $1}')
