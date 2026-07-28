@@ -142,6 +142,11 @@ rustup set profile minimal
 echo "-----> rustup toolchain install"
 rustup toolchain install
 
+echo "-----> Removing cached release executables"
+if [ -d "$CARGO_TARGET_DIR/release" ]; then
+    find "$CARGO_TARGET_DIR/release" -maxdepth 1 -type f -executable -delete
+fi
+
 echo "-----> cargo build"
 cargo build --release
 
