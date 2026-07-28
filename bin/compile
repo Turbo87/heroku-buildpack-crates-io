@@ -102,6 +102,13 @@ cd "$BUILD_DIR/svelte"
 pnpm run build
 cd "$BUILD_DIR"
 
+# `.svelte-kit/output/client` is a byte-for-byte duplicate of what the
+# adapter already copied into `svelte/build`, and `output/server` is only
+# used by the adapter during prerendering. Nothing reads `.svelte-kit` at
+# runtime, so keeping it around just adds ~21 MB to the slug.
+echo "-----> rm -rf svelte/.svelte-kit"
+rm -rf "$BUILD_DIR/svelte/.svelte-kit"
+
 echo "-----> rm -rf node_modules"
 rm -rf node_modules
 
