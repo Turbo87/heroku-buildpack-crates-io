@@ -41,8 +41,13 @@ if [ ! -f "$FONTS_DIR/FiraSans-Regular.ttf" ]; then
         unzip -q "$FIRA_SANS_CACHE/fira-$FIRA_SANS_VERSION.zip" -d "$FIRA_SANS_CACHE"
     fi
 
-    # Copy TTF files to user font directory
-    cp "$FIRA_SANS_CACHE/Fira-$FIRA_SANS_VERSION/ttf/FiraSans"*.ttf "$FONTS_DIR/"
+    # Copy TTF files to user font directory. The OG image template only uses
+    # the `regular`, `medium` and `semibold` weights, and never italics, so
+    # copying the full set of 32 files would put ~12 MB of unused fonts in the
+    # slug.
+    for weight in Regular Medium SemiBold; do
+        cp "$FIRA_SANS_CACHE/Fira-$FIRA_SANS_VERSION/ttf/FiraSans-$weight.ttf" "$FONTS_DIR/"
+    done
 
     # Remove the zip archive to save cache space
     rm -f "$FIRA_SANS_CACHE/fira-$FIRA_SANS_VERSION.zip"
