@@ -68,7 +68,7 @@ else
     echo "-----> Noto Color Emoji font v$NOTO_EMOJI_VERSION already installed"
 fi
 
-### Install Node.js & pnpm and build frontend
+### Install pnpm and build frontend
 
 MISE_VERSION="v2026.7.0"
 export MISE_VERSION
@@ -87,7 +87,7 @@ export PATH="$MISE_DATA_DIR/bin:$MISE_DATA_DIR/shims:$PATH"
 
 echo "-----> mise install"
 mise trust
-mise install node pnpm
+mise install pnpm
 
 export PNPM_HOME="$CACHE_DIR/pnpm"
 
